@@ -22,7 +22,7 @@ import java.time.OffsetDateTime;
 import com.auth.enums.OtpStatus;
 
 @Entity
-@Table(name = "password_reset_token", schema = "public")
+@Table(name = "password_reset_token")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,6 +55,5 @@ public class PasswordResetToken {
     @Enumerated(EnumType.STRING)
     @Column(name = "otp_status", length = 255)
     private OtpStatus otpStatus;
-
 
 }
