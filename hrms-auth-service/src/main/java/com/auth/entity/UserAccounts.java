@@ -28,7 +28,7 @@ public class UserAccounts extends Auditable {
     private UUID userAccountId;
 
     @Column(name = "employee_id")
-    private UUID employeeId;
+    private UUID employeeId; // Need to add master table
 
     @Column(name = "username", length = 255)
     private String username;
@@ -36,14 +36,11 @@ public class UserAccounts extends Auditable {
     @Column(name = "email", length = 255, unique = true)
     private String email;
 
-    @Column(name = "password_hash", length = 255)
-    private String passwordHash;
+    @Column(name = "password", length = 255)
+    private String password;
 
     @Column(name = "account_status", length = 255)
     private String accountStatus;
-
-    @Column(name = "mfa_enabled")
-    private Boolean mfaEnabled;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")
