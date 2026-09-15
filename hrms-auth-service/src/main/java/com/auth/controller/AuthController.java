@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.dto.request.RefreshTokenRequest;
 import com.auth.dto.request.SuperAdminRegisterRequest;
 import com.auth.dto.response.ApiResponseDto;
 import com.auth.service.AuthService;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import static com.auth.constant.ApiConstants.AUTH;
 import static com.auth.constant.ApiConstants.SUPER_ADMIN_REGISTER;
 import static com.auth.constant.ApiConstants.LOGIN;
+import static com.auth.constant.ApiConstants.REFRESH_TOKEN;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +39,16 @@ public class AuthController {
 
 	    return authService.login(loginRequest);
 	}
+	
+	
+	@PostMapping(REFRESH_TOKEN)
+	public ResponseEntity<ApiResponseDto> refreshToken(
+	        @RequestBody RefreshTokenRequest request) {
+
+	    return authService.refreshToken(request);
+	}
+	
+	
 
 
 }

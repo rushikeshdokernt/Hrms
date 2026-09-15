@@ -30,7 +30,7 @@ public class JwtService {
     public String generateToken(UserRole userRole) {
 
         UserAccounts user =
-                userRole.getUserAccount();
+                userRole.getUserAccounts();
 
         RoleMaster role =
                 userRole.getRoleMaster();

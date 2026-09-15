@@ -37,7 +37,7 @@ public class RefreshToken extends Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_account_id", nullable = false)
-    private UserAccounts userAccount;
+    private UserAccounts userAccounts;
 
     @Column(name = "token", nullable = false, unique = true, length = 255)
     private String token;

@@ -11,8 +11,8 @@ import com.auth.entity.UserRole;
 
 public interface UserRoleRepository extends JpaRepository<UserRole, UUID>{
 
-	List<UserRole> findByUserAccountUserAccountId(UUID userAccountId);
+//	UserRole findByUserAccountUserAccountId(UUID userAccountId);
 
-	//Optional<UserRole> findByUserAccountUserAccountId(UUID userAccountId);
+	Optional<UserRole> findByUserAccountsUserAccountId(UUID userAccountId);
 
 }

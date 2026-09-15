@@ -13,5 +13,6 @@ public final class ApiConstants {
 	
 	//Auth 
 	public static final String LOGIN = "/login";
+	public static final String REFRESH_TOKEN = "/refresh";
 
 }

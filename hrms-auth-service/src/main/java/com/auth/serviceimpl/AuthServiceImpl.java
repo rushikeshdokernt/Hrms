@@ -3,28 +3,35 @@ package com.auth.serviceimpl;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.auth.dto.request.RefreshTokenRequest;
 import com.auth.dto.request.SuperAdminRegisterRequest;
 import com.auth.dto.response.ApiResponseDto;
+import com.auth.dto.response.LoginResponse;
+import com.auth.entity.RefreshToken;
 import com.auth.entity.RoleMaster;
 import com.auth.entity.UserAccounts;
 import com.auth.entity.UserRole;
 import com.auth.enums.RoleStatus;
+import com.auth.exception.BadRequestException;
 import com.auth.exception.DuplicateResourceException;
 import com.auth.exception.InvalidCredentialsException;
 import com.auth.exception.InvalidRequestException;
 import com.auth.exception.ResourceNotFoundException;
 import com.auth.jwt.security.JwtService;
 import com.auth.mapper.UserAccountsMapper;
+import com.auth.repository.RefreshTokenRepository;
 import com.auth.repository.RoleMasterRepository;
 import com.auth.repository.UserAccountsRepository;
 import com.auth.repository.UserRoleRepository;
 import com.auth.service.AuthService;
+import com.auth.service.RefreshTokenService;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import jakarta.transaction.Transactional;
@@ -45,6 +52,10 @@ public class AuthServiceImpl implements AuthService{
 	private final PasswordEncoder passwordEncoder;
 	
 	private final JwtService jwtService;
+	
+	private final RefreshTokenService refreshTokenService;
+	
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	@Transactional
 	@Override
@@ -84,7 +95,7 @@ public class AuthServiceImpl implements AuthService{
 
 	    UserRole userRole = new UserRole();
 
-	    userRole.setUserAccount(userAccount);
+	    userRole.setUserAccounts(userAccount);
 	    userRole.setRoleMaster(roleMaster);
 
 	    userRoleRepository.save(userRole);
@@ -169,10 +180,8 @@ public class AuthServiceImpl implements AuthService{
 	    }
 
 	    UserRole userRole = userRoleRepository
-	            .findByUserAccountUserAccountId(
+	            .findByUserAccountsUserAccountId(
 	                    userAccount.getUserAccountId())
-	            .stream()
-	            .findFirst()
 	            .orElseThrow(() ->
 	                    new ResourceNotFoundException(
 	                            "Role not assigned to user"));
@@ -182,28 +191,86 @@ public class AuthServiceImpl implements AuthService{
 	    String token = jwtService.generateToken(
 	    		userRole
 	    );
+	    
+	    RefreshToken refreshToken = refreshTokenService.createRefreshToken(userAccount);
 
 	    // 6. Response
-	    Map<String, Object> data = new HashMap<>();
-
-	    data.put("accessToken", token);
-	    data.put("tokenType", "Bearer");
-	    data.put("userAccountId",
-	            userAccount.getUserAccountId());
-	    data.put("username",
-	            userAccount.getUsername());
-	    data.put("email",
-	            userAccount.getEmail());
-	    data.put("roleName",
-	            roleMaster.getRoleName());
+//	    Map<String, Object> data = new HashMap<>();
+//
+//	    data.put("accessToken", token);
+//	    data.put("tokenType", "Bearer");
+//	    data.put("userAccountId",
+//	            userAccount.getUserAccountId());
+//	    data.put("username",
+//	            userAccount.getUsername());
+//	    data.put("email",
+//	            userAccount.getEmail());
+//	    data.put("roleName",
+//	            roleMaster.getRoleName());
+	    
+	    LoginResponse loginResponse = LoginResponse.builder()
+	            .accessToken(token)
+	            .refreshToken(refreshToken.getToken())
+	            .userAccountId(userAccount.getUserAccountId())
+	            .userName(userAccount.getUsername())
+	            .email(userAccount.getEmail())
+	            .roleName(roleMaster.getRoleName())
+	            .build();
+	    		
+	    		
 
 	    return ResponseEntity.ok(
 	            ApiResponseDto.builder()
 	                    .success(true)
 	                    .message("Login successful")
-	                    .data(data)
+	                    .data(loginResponse)
 	                    .build()
 	    );
+	}
+
+	@Override
+	public ResponseEntity<ApiResponseDto> refreshToken(RefreshTokenRequest request) {
+		UUID userId = null;
+		try {
+			if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
+				throw new BadRequestException("Refresh token is required.");
+			}
+
+			// Validate Refresh Token
+			RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
+
+			UserAccounts user = refreshToken.getUserAccounts();
+			if (user != null) {
+				userId = user.getUserAccountId();
+			}
+
+			UserRole userRole = userRoleRepository.findByUserAccountsUserAccountId(user.getUserAccountId())
+					.orElseThrow(() -> new ResourceNotFoundException("User role not found"));
+
+			
+
+			// Generate new Access Token
+			String accessToken = jwtService.generateToken(userRole);
+
+			// ===== Refresh Token Rotation =====
+
+			refreshToken.setRevoked(true);
+			refreshTokenRepository.save(refreshToken);
+
+			RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
+
+			//logAudit(userId, orgId, AuditCategory.SECURITY, AuditAction.REFRESH_TOKEN, AuditStatus.SUCCESS, "REFRESH_TOKEN", "Token refreshed successfully.");
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("accessToken", accessToken);
+			data.put("refreshToken", newRefreshToken.getToken());
+
+			return ResponseEntity
+					.ok(ApiResponseDto.builder().success(true).message("Token refreshed successfully.").data(data).build());
+		} catch (Exception ex) {
+			//logAudit(userId, orgId, AuditCategory.SECURITY, AuditAction.REFRESH_TOKEN, AuditStatus.FAILED, "REFRESH_TOKEN", ex.getMessage());
+			throw ex;
+		}
 	}
 
 

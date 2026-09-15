@@ -37,7 +37,7 @@ public class UserRole extends Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_account_id", nullable = false)
-    private UserAccounts userAccount;
+    private UserAccounts userAccounts;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)

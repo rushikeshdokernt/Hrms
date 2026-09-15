@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import com.auth.entity.UserAccounts;
 import com.auth.entity.UserRole;
+import com.auth.exception.ResourceNotFoundException;
 import com.auth.repository.UserAccountsRepository;
 import com.auth.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,25 +33,21 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        List<UserRole> userRoles =
+        UserRole userRole =
                 userRoleRepository
-                        .findByUserAccountUserAccountId(
+                        .findByUserAccountsUserAccountId(
                                 user.getUserAccountId()
-                        );
+                        ).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
         List<SimpleGrantedAuthority> authorities =
-                userRoles.stream()
-                        .filter(userRole ->
-                                userRole.getRoleMaster() != null
-                        )
-                        .map(userRole ->
+                userRole.getRoleMaster() != null
+                        ? List.of(
                                 new SimpleGrantedAuthority(
                                         "ROLE_" +
-                                        userRole.getRoleMaster()
-                                                .getRoleName()
+                                        userRole.getRoleMaster().getRoleName()
                                 )
                         )
-                        .toList();
+                        : List.of();
 
         return new CustomUserDetails(
                 user.getUserAccountId(),
