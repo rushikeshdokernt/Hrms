@@ -2,7 +2,9 @@ package com.auth.serviceimpl;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.auth.controller.TenantDetails;
 import com.auth.dto.request.RefreshTokenRequest;
 import com.auth.dto.request.SuperAdminRegisterRequest;
 import com.auth.dto.response.ApiResponseDto;
@@ -28,6 +31,7 @@ import com.auth.jwt.security.JwtService;
 import com.auth.mapper.UserAccountsMapper;
 import com.auth.repository.RefreshTokenRepository;
 import com.auth.repository.RoleMasterRepository;
+import com.auth.repository.TenantDetailsRepository;
 import com.auth.repository.UserAccountsRepository;
 import com.auth.repository.UserRoleRepository;
 import com.auth.service.AuthService;
@@ -56,6 +60,8 @@ public class AuthServiceImpl implements AuthService{
 	private final RefreshTokenService refreshTokenService;
 	
 	private final RefreshTokenRepository refreshTokenRepository;
+	
+	private final TenantDetailsRepository tenantDetailsRepository;
 
 	@Transactional
 	@Override
@@ -187,9 +193,12 @@ public class AuthServiceImpl implements AuthService{
 	                            "Role not assigned to user"));
 
 	    RoleMaster roleMaster = userRole.getRoleMaster();
+	    
+	    TenantDetails tenantDetails =
+	            tenantDetailsRepository.findFirstByOrderByTenantDetailIdAsc().orElseThrow(()-> new ResourceNotFoundException("No tenant found"));
 
 	    String token = jwtService.generateToken(
-	    		userRole
+	    		userRole,tenantDetails
 	    );
 	    
 	    RefreshToken refreshToken = refreshTokenService.createRefreshToken(userAccount);
@@ -211,10 +220,6 @@ public class AuthServiceImpl implements AuthService{
 	    LoginResponse loginResponse = LoginResponse.builder()
 	            .accessToken(token)
 	            .refreshToken(refreshToken.getToken())
-	            .userAccountId(userAccount.getUserAccountId())
-	            .userName(userAccount.getUsername())
-	            .email(userAccount.getEmail())
-	            .roleName(roleMaster.getRoleName())
 	            .build();
 	    		
 	    		
@@ -248,9 +253,11 @@ public class AuthServiceImpl implements AuthService{
 					.orElseThrow(() -> new ResourceNotFoundException("User role not found"));
 
 			
+			 TenantDetails tenantDetails =
+			            tenantDetailsRepository.findFirstByOrderByTenantDetailIdAsc().orElseThrow(()-> new ResourceNotFoundException("No tenant found"));
 
 			// Generate new Access Token
-			String accessToken = jwtService.generateToken(userRole);
+			String accessToken = jwtService.generateToken(userRole,tenantDetails);
 
 			// ===== Refresh Token Rotation =====
 

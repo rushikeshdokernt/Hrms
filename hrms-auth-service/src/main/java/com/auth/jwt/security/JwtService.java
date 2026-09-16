@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.auth.controller.TenantDetails;
 import com.auth.entity.RoleMaster;
 import com.auth.entity.UserAccounts;
 import com.auth.entity.UserRole;
@@ -27,7 +28,7 @@ public class JwtService {
     @Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
 
-    public String generateToken(UserRole userRole) {
+    public String generateToken(UserRole userRole,TenantDetails tenantDetails) {
 
         UserAccounts user =
                 userRole.getUserAccounts();
@@ -66,6 +67,11 @@ public class JwtService {
         claims.put(
                 "roleName",
                 role.getRoleName()
+        );
+        
+        claims.put(
+                "tenantId",
+                tenantDetails.getTenantId() 
         );
 
         Date issuedAt = new Date();

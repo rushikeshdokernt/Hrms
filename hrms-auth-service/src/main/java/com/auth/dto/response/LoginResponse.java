@@ -15,12 +15,6 @@ public class LoginResponse {
 	
 	private String refreshToken;
 	
-	private UUID userAccountId;
 	
-	private String userName;
-	
-	private String email;
-	
-	private String roleName;
 	
 }
