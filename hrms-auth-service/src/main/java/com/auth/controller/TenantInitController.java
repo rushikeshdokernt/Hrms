@@ -57,7 +57,7 @@ public class TenantInitController {
                 (originHeader != null && !originHeader.isBlank()) ? originHeader : refererHeader;
 
         log.info("Tenant init hit - Candidate host: [{}], headerSubdomain: [{}]", candidateHost, effectiveSubdomain);
-        System.out.println("====================>"+headerCode);
+        System.out.println("====================>"+headerCode+"========="+effectiveSubdomain+"======"+headerCode+"======"+candidateHost);
         ApiResponseDto response = tenantInitService.initializeTenantOnDomainHit(
                 candidateHost, effectiveSubdomain, headerCode);
 

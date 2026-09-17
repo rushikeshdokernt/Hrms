@@ -12,13 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.auth.controller.TenantDetails;
 import com.auth.dto.request.RefreshTokenRequest;
 import com.auth.dto.request.SuperAdminRegisterRequest;
 import com.auth.dto.response.ApiResponseDto;
 import com.auth.dto.response.LoginResponse;
 import com.auth.entity.RefreshToken;
 import com.auth.entity.RoleMaster;
+import com.auth.entity.TenantDetails;
 import com.auth.entity.UserAccounts;
 import com.auth.entity.UserRole;
 import com.auth.enums.RoleStatus;

@@ -8,6 +8,7 @@ import com.auth.dto.response.TenantInitResponseDto;
 import com.auth.entity.DynamicFormStructure;
 import com.auth.exception.BadRequestException;
 import com.auth.external.tenant.util.TenantServiceUtil;
+import com.auth.multitenancy.TenantContext;
 import com.auth.multitenancy.TenantDataSourceManager;
 import com.auth.repository.DynamicFormRepository;
 import com.auth.service.TenantInitService;
@@ -30,14 +31,15 @@ public class TenantInitServiceImpl implements TenantInitService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public ApiResponseDto initializeTenantOnDomainHit(String domain, String subdomain, String headerTenant) {
+    public ApiResponseDto initializeTenantOnDomainHit(String subdomain, String domain , String headerTenant) {
         // 1. Identify tenant target key
         TenantConnectionConfigDto tenantConfig = null;
-
+        System.out.println(subdomain+"----------------------------------------------"+domain);
         if (headerTenant != null && !headerTenant.isBlank()) {
-        	System.out.println("----------------------------------------------");
+        	
             tenantConfig = tenantServiceUtil.getTenantByCode(headerTenant.trim());
         } else if (subdomain != null && !subdomain.isBlank()) {
+        	System.out.println("==============================llllll="+subdomain);
             tenantConfig = tenantServiceUtil.getTenantBySubdomain(subdomain.trim());
         } else if (domain != null && !domain.isBlank()) {
             tenantConfig = tenantServiceUtil.resolveTenantByDomain(domain.trim());
@@ -74,12 +76,16 @@ public class TenantInitServiceImpl implements TenantInitService {
         System.out.println("=================================================================");
         System.out.println("=================================================================");
         String formType = "LOGIN";
+        
+        TenantContext.setCurrentTenant(tenantConfig.getTenantCode());
+        JsonNode formFields;
+        try {
         DynamicFormStructure formStructure = dynamicFormRepository.findByFormType(formType);
 //        if (formStructure == null) {
 //            formStructure = dynamicFormRepository.findByFormType("DEFAULT_LOGIN");
 //        }
 
-        JsonNode formFields;
+        
         if (formStructure != null && formStructure.getFormFields() != null) {
             formFields = formStructure.getFormFields();
             formType = formStructure.getFormType();
@@ -87,6 +93,10 @@ public class TenantInitServiceImpl implements TenantInitService {
             // Fallback default form fields if none seeded in DB yet
             formFields = createDefaultLoginForm();
         }
+        }finally {
+        	TenantContext.clear();
+        }
+        
 
         // 5. Construct initialization response
         TenantInitResponseDto responseDto = TenantInitResponseDto.builder()

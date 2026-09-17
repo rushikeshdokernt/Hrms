@@ -12,4 +12,6 @@ public interface DynamicFormRepository extends JpaRepository<DynamicFormStructur
 
 	DynamicFormStructure findByFormType(String formType);
 
+	DynamicFormStructure findByFormTypeIgnoreCase(String formType);
+
 }

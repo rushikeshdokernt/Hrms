@@ -19,7 +19,7 @@ public interface TenantFeignClient {
     @GetMapping("/internal/config/{tenantCode}")
     ResponseEntity<TenantConnectionConfigDto> getTenantConfigByCode(@PathVariable("tenantCode") String tenantCode);
 
-    @GetMapping("/internal/config/{subdomain}")
+    @GetMapping("/internal/subdomain/{subdomain}")
     ResponseEntity<TenantConnectionConfigDto> getTenantConfigBySubdomain(@PathVariable("subdomain") String subdomain);
 
     @GetMapping("/internal/config/id/{tenantId}")

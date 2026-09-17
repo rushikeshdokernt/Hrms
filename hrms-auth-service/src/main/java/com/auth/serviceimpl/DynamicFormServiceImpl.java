@@ -41,7 +41,8 @@ public class DynamicFormServiceImpl implements DynamicFormService{
 
 	    DynamicFormStructure dynamicFormStructure =
 	            dynamicFormMapper.toEntity(dynamicFormRequest);
-
+	    
+	    dynamicFormStructure.setFormType(dynamicFormRequest.getFormType().toUpperCase());
 	    dynamicFormRepository.save(dynamicFormStructure);
 
 	    return ResponseEntity.status(HttpStatus.CREATED)
@@ -56,7 +57,7 @@ public class DynamicFormServiceImpl implements DynamicFormService{
 	public ResponseEntity<ApiResponseDto> getDynamicForm(String formType) {
 
 	    DynamicFormStructure dynamicFormStructure =
-	            dynamicFormRepository.findByFormType(formType);
+	            dynamicFormRepository.findByFormTypeIgnoreCase(formType);
 
 	    if (dynamicFormStructure == null) {
 	        throw new ResourceNotFoundException(

@@ -112,6 +112,8 @@ public class TenantServiceUtil {
         try {
             ResponseEntity<TenantConnectionConfigDto> response = tenantFeignClient.getTenantConfigBySubdomain(subdomain.trim());
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            	
+            	System.out.println("---------===========---------->"+response.getBody());
                 TenantConnectionConfigDto config = response.getBody();
                 cacheTenant(config);
                 return config;

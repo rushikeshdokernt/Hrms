@@ -1,8 +1,6 @@
-package com.auth.controller;
+package com.auth.entity;
 
 import java.util.UUID;
-
-import com.auth.entity.Auditable;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

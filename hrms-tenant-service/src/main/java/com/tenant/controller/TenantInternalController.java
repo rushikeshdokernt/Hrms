@@ -29,7 +29,7 @@ public class TenantInternalController {
         return ResponseEntity.ok(tenantService.getTenantConfigByCode(tenantCode));
     }
 
-    @GetMapping("/internal/config/subdomain/{subdomain}")
+    @GetMapping("/internal/subdomain/{subdomain}")
     public ResponseEntity<TenantConnectionConfigDto> getTenantConfigBySubdomain(@PathVariable("subdomain") String subdomain) {
         return ResponseEntity.ok(tenantService.getTenantConfigBySubdomain(subdomain));
     }
