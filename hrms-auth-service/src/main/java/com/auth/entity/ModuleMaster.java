@@ -34,6 +34,9 @@ public class ModuleMaster extends Auditable {
 
     @Column(name = "module_name", nullable = false, unique = true, length = 255)
     private String moduleName;
+    
+    @Column(name="is_active")
+    private boolean isActive;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")

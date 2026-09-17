@@ -63,6 +63,8 @@ public class AuthServiceImpl implements AuthService{
 	
 	private final TenantDetailsRepository tenantDetailsRepository;
 
+	private final com.auth.external.tenant.util.TenantServiceUtil tenantServiceUtil;
+
 	@Transactional
 	@Override
 	public ResponseEntity<ApiResponseDto> registerSuperAdmin(
@@ -123,6 +125,20 @@ public class AuthServiceImpl implements AuthService{
 
 	    if (password == null || password.isBlank()) {
 	        throw new InvalidRequestException("Password is required");
+	    }
+
+	    // Check if tenant was passed in request body
+	    if (com.auth.multitenancy.TenantContext.getCurrentTenant() == null) {
+	        String reqTenantId = loginRequest.path("tenantId").asText(null);
+	        String reqTenantCode = loginRequest.path("tenantCode").asText(null);
+	        String reqSubdomain = loginRequest.path("subdomain").asText(null);
+
+	        String targetTenant = (reqTenantId != null && !reqTenantId.isBlank()) ? reqTenantId :
+	                (reqTenantCode != null && !reqTenantCode.isBlank()) ? reqTenantCode : reqSubdomain;
+
+	        if (targetTenant != null && !targetTenant.isBlank()) {
+	            com.auth.multitenancy.TenantContext.setCurrentTenant(targetTenant);
+	        }
 	    }
 
 	    UserAccounts userAccount;
@@ -194,8 +210,7 @@ public class AuthServiceImpl implements AuthService{
 
 	    RoleMaster roleMaster = userRole.getRoleMaster();
 	    
-	    TenantDetails tenantDetails =
-	            tenantDetailsRepository.findFirstByOrderByTenantDetailIdAsc().orElseThrow(()-> new ResourceNotFoundException("No tenant found"));
+	    TenantDetails tenantDetails = resolveCurrentTenantDetails();
 
 	    String token = jwtService.generateToken(
 	    		userRole,tenantDetails
@@ -253,8 +268,7 @@ public class AuthServiceImpl implements AuthService{
 					.orElseThrow(() -> new ResourceNotFoundException("User role not found"));
 
 			
-			 TenantDetails tenantDetails =
-			            tenantDetailsRepository.findFirstByOrderByTenantDetailIdAsc().orElseThrow(()-> new ResourceNotFoundException("No tenant found"));
+			TenantDetails tenantDetails = resolveCurrentTenantDetails();
 
 			// Generate new Access Token
 			String accessToken = jwtService.generateToken(userRole,tenantDetails);
@@ -280,5 +294,30 @@ public class AuthServiceImpl implements AuthService{
 		}
 	}
 
+	private TenantDetails resolveCurrentTenantDetails() {
+		String currentTenant = com.auth.multitenancy.TenantContext.getCurrentTenant();
+		if (currentTenant != null && !currentTenant.isBlank()) {
+			try {
+				com.auth.dto.response.TenantConnectionConfigDto config = null;
+				if (currentTenant.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
+					config = tenantServiceUtil.getTenantById(currentTenant);
+				} else {
+					config = tenantServiceUtil.getTenantByCode(currentTenant);
+					if (config == null) {
+						config = tenantServiceUtil.getTenantBySubdomain(currentTenant);
+					}
+				}
+				if (config != null) {
+					return TenantDetails.builder()
+							.tenantId(config.getTenantId())
+							.tenantName(config.getTenantName())
+							.build();
+				}
+			} catch (Exception ignored) {
+			}
+		}
+		return tenantDetailsRepository.findFirstByOrderByTenantDetailIdAsc()
+				.orElseGet(() -> TenantDetails.builder().tenantName("Default").build());
+	}
 
 }
