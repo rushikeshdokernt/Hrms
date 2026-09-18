@@ -72,29 +72,37 @@ public class TenantInitServiceImpl implements TenantInitService {
         }
 
         // 4. LOAD DYNAMIC LOGIN FORM FOR THE TENANT
-        
         System.out.println("=================================================================");
         System.out.println("=================================================================");
         String formType = "LOGIN";
-        
-        TenantContext.setCurrentTenant(tenantConfig.getTenantCode());
         JsonNode formFields;
-        try {
-        DynamicFormStructure formStructure = dynamicFormRepository.findByFormType(formType);
-//        if (formStructure == null) {
-//            formStructure = dynamicFormRepository.findByFormType("DEFAULT_LOGIN");
-//        }
 
-        
-        if (formStructure != null && formStructure.getFormFields() != null) {
-            formFields = formStructure.getFormFields();
-            formType = formStructure.getFormType();
-        } else {
-            // Fallback default form fields if none seeded in DB yet
-            formFields = createDefaultLoginForm();
+        // TenantFilter returns null for raw IPv4 addresses (e.g. 172.20.1.62),
+        // so TenantContext may not be set yet. We explicitly set it here so that
+        // all repository queries below route to the correct tenant datasource
+        // instead of falling back to the default app.properties datasource.
+        boolean tenantContextSetByUs = false;
+        if (TenantContext.getCurrentTenant() == null || TenantContext.getCurrentTenant().isBlank()) {
+            TenantContext.setCurrentTenant(tenantConfig.getTenantCode());
+            tenantContextSetByUs = true;
+            log.info("TenantContext explicitly set to [{}] inside TenantInitService (IP-based access)", tenantConfig.getTenantCode());
         }
-        }finally {
-        	TenantContext.clear();
+
+        try {
+            DynamicFormStructure formStructure = dynamicFormRepository.findByFormType(formType);
+
+            if (formStructure != null && formStructure.getFormFields() != null) {
+                formFields = formStructure.getFormFields();
+                formType = formStructure.getFormType();
+            } else {
+                // Fallback default form fields if none seeded in DB yet
+                formFields = createDefaultLoginForm();
+            }
+        } finally {
+            // Only clear if we set it — let TenantFilter manage its own context
+            if (tenantContextSetByUs) {
+                TenantContext.clear();
+            }
         }
         
 

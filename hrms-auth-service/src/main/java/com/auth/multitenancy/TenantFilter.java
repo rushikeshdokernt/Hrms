@@ -151,8 +151,20 @@ public class TenantFilter extends OncePerRequestFilter {
             if (cleanHost.equalsIgnoreCase("localhost") || cleanHost.equals("127.0.0.1")) {
                 return "localhost";
             }
-            // If raw IP address (like 172.20.1.57), do NOT treat "172" as a tenant!
+            // If raw IP address (e.g. 172.20.1.62), resolve tenant via domain lookup.
+            // We cannot use the IP octets as a subdomain (e.g. "172"), so we ask the
+            // tenant-service to resolve it by full IP. The result is cached in
+            // TenantServiceUtil, so subsequent requests are fast (no extra Feign calls).
             if (IPV4_PATTERN.matcher(cleanHost).matches()) {
+                try {
+                    TenantConnectionConfigDto config = tenantServiceUtil.resolveTenantByDomain(cleanHost);
+                    if (config != null && config.getTenantCode() != null && !config.getTenantCode().isBlank()) {
+                        log.debug("Resolved tenant [{}] from IP address [{}]", config.getTenantCode(), cleanHost);
+                        return config.getTenantCode().toLowerCase().trim();
+                    }
+                } catch (Exception ex) {
+                    log.warn("Could not resolve tenant for IP [{}]: {}", cleanHost, ex.getMessage());
+                }
                 return null;
             }
             // If domain with dots (like hnt.ai or acme.hrms.com)
