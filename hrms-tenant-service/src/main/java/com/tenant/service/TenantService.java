@@ -1,6 +1,6 @@
 package com.tenant.service;
 
-import com.tenant.dto.TenantConnectionConfigDto;
+import com.tenant.dto.response.TenantConnectionConfigDto;
 
 public interface TenantService {
     TenantConnectionConfigDto getTenantConfigBySubdomain(String subdomain);

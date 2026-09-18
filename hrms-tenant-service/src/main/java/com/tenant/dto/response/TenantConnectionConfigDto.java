@@ -1,4 +1,4 @@
-package com.tenant.dto;
+package com.tenant.dto.response;
 
 import java.util.UUID;
 

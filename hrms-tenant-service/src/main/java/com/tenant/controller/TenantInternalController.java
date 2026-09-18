@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tenant.dto.TenantConnectionConfigDto;
+import com.tenant.dto.response.TenantConnectionConfigDto;
 import com.tenant.service.TenantService;
 
 import lombok.RequiredArgsConstructor;

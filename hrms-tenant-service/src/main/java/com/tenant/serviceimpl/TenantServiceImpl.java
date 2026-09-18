@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.tenant.dto.TenantConnectionConfigDto;
+import com.tenant.dto.response.TenantConnectionConfigDto;
 import com.tenant.entity.Tenants;
 import com.tenant.repository.TenantRepository;
 import com.tenant.service.TenantService;
