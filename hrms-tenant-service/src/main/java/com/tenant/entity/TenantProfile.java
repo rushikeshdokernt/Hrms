@@ -47,8 +47,8 @@ public class TenantProfile extends Auditable {
     @Column(name = "tenant_name", nullable = false, length = 200)
     private String tenantName;
 
-    @Column(name = "tenant_size", length = 50)
-    private String tenantSize;
+    @Column(name = "tenant_size")
+    private Integer tenantSize;
 
     @Column(name = "gstin", length = 15)
     private String gstin;

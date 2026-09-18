@@ -12,4 +12,5 @@ import com.tenant.entity.TenantsDBDetails;
 public interface TenantDBDetailsRepository extends JpaRepository<TenantsDBDetails, UUID> {
     Optional<TenantsDBDetails> findBySubdomain(String subdomain);
     Optional<TenantsDBDetails> findByTenantCode(String tenantCode);
+    Optional<TenantsDBDetails> findByDomainUrl(String domainUrl);
 }

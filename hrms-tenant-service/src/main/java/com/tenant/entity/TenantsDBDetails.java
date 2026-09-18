@@ -61,7 +61,7 @@ public class TenantsDBDetails extends Auditable {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
-    private TenantStatus status = TenantStatus.TRIAL;
+    private TenantStatus status = TenantStatus.INACTIVE;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "tenant_type", nullable = false, length = 20)
