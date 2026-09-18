@@ -10,7 +10,7 @@ import static com.tenant.constant.ApiConstant.ADD;
 
 @RestController
 @RequestMapping(TENANT)
-public class ManageTenanatController {
+public class TenantManageController {
 
 	@PostMapping(ADD)
 	public ResponseEntity<?> createTenant(){

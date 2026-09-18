@@ -20,27 +20,27 @@ import com.tenant.enums.TenantStatus;
 import com.tenant.enums.TenantType;
 
 @Entity
-@Table(name = "tenants", schema = "tenant")
+@Table(name = "tenants_db_details", schema = "tenant")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Tenants extends Auditable {
+public class TenantsDBDetails extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
 
-    @Column(name = "tenant_name", nullable = false, length = 200)
-    private String tenantName;
-
     @Column(name = "tenant_code", nullable = false, unique = true, length = 50)
     private String tenantCode;
 
     @Column(name = "subdomain", nullable = false, unique = true, length = 100)
     private String subdomain;
+    
+    @Column(name = "domain_url", nullable = false, unique = true, length = 100)
+    private String domainUrl;
 
     @Column(name = "db_host", nullable = false, length = 255)
     private String dbHost;
@@ -67,22 +67,10 @@ public class Tenants extends Auditable {
     @Column(name = "tenant_type", nullable = false, length = 20)
     @Builder.Default
     private TenantType type = TenantType.CLIENT;
-    
-
-    @Column(name = "contact_name", length = 200)
-    private String contactName;
-
-    @Column(name = "country_code", length = 5)
-    @Builder.Default
-    private String countryCode = "IN";
 
     @Column(name = "timezone", length = 100)
     @Builder.Default
     private String timezone = "Asia/Kolkata";
-
-    @Column(name = "currency", length = 10)
-    @Builder.Default
-    private String currency = "INR";
 
     @Column(name = "locale", length = 20)
     @Builder.Default

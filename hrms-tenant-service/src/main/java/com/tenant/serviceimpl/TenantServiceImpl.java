@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.tenant.dto.response.TenantConnectionConfigDto;
-import com.tenant.entity.Tenants;
-import com.tenant.repository.TenantRepository;
+import com.tenant.entity.TenantsDBDetails;
+import com.tenant.repository.TenantDBDetailsRepository;
 import com.tenant.service.TenantService;
 
 import lombok.RequiredArgsConstructor;
@@ -17,25 +17,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TenantServiceImpl implements TenantService {
 
-    private final TenantRepository tenantRepository;
+    private final TenantDBDetailsRepository tenantDBDetailsRepository;
 
     @Override
     public TenantConnectionConfigDto getTenantConfigBySubdomain(String subdomain) {
-        Tenants tenant = tenantRepository.findBySubdomain(subdomain)
+    	TenantsDBDetails tenant = tenantDBDetailsRepository.findBySubdomain(subdomain)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found with subdomain: " + subdomain));
         return mapToDto(tenant);
     }
 
     @Override
     public TenantConnectionConfigDto getTenantConfigByCode(String tenantCode) {
-        Tenants tenant = tenantRepository.findByTenantCode(tenantCode)
+    	TenantsDBDetails tenant = tenantDBDetailsRepository.findByTenantCode(tenantCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found with code: " + tenantCode));
         return mapToDto(tenant);
     }
 
     @Override
     public TenantConnectionConfigDto getTenantConfigById(java.util.UUID tenantId) {
-        Tenants tenant = tenantRepository.findById(tenantId)
+    	TenantsDBDetails tenant = tenantDBDetailsRepository.findById(tenantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found with ID: " + tenantId));
         return mapToDto(tenant);
     }
@@ -66,17 +66,16 @@ public class TenantServiceImpl implements TenantService {
         log.info("Resolving tenant for domain: {}, extracted subdomain/code: {}", domain, effectiveSubdomain);
 
         // Try lookup by subdomain first, then tenantCode
-        return tenantRepository.findBySubdomain(effectiveSubdomain)
-                .or(() -> tenantRepository.findByTenantCode(effectiveSubdomain))
-                .or(() -> tenantRepository.findBySubdomain(effectiveCleaned))
+        return tenantDBDetailsRepository.findBySubdomain(effectiveSubdomain)
+                .or(() -> tenantDBDetailsRepository.findByTenantCode(effectiveSubdomain))
+                .or(() -> tenantDBDetailsRepository.findBySubdomain(effectiveCleaned))
                 .map(this::mapToDto)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found for domain: " + domain));
     }
 
-    private TenantConnectionConfigDto mapToDto(Tenants tenant) {
+    private TenantConnectionConfigDto mapToDto(TenantsDBDetails tenant) {
         return TenantConnectionConfigDto.builder()
                 .tenantId(tenant.getTenantId())
-                .tenantName(tenant.getTenantName())
                 .tenantCode(tenant.getTenantCode())
                 .subdomain(tenant.getSubdomain())
                 .dbHost(tenant.getDbHost())
@@ -87,7 +86,6 @@ public class TenantServiceImpl implements TenantService {
                 .status(tenant.getStatus())
                 .type(tenant.getType())
                 .timezone(tenant.getTimezone())
-                .currency(tenant.getCurrency())
                 .locale(tenant.getLocale())
                 .build();
     }
