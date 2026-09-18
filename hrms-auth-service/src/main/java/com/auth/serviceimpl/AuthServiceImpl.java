@@ -27,6 +27,7 @@ import com.auth.exception.DuplicateResourceException;
 import com.auth.exception.InvalidCredentialsException;
 import com.auth.exception.InvalidRequestException;
 import com.auth.exception.ResourceNotFoundException;
+import com.auth.external.tenant.util.TenantServiceUtil;
 import com.auth.jwt.security.JwtService;
 import com.auth.mapper.UserAccountsMapper;
 import com.auth.repository.RefreshTokenRepository;
@@ -36,8 +37,8 @@ import com.auth.repository.UserAccountsRepository;
 import com.auth.repository.UserRoleRepository;
 import com.auth.service.AuthService;
 import com.auth.service.RefreshTokenService;
+import com.auth.util.DynamicValidationUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -63,7 +64,9 @@ public class AuthServiceImpl implements AuthService{
 	
 	private final TenantDetailsRepository tenantDetailsRepository;
 
-	private final com.auth.external.tenant.util.TenantServiceUtil tenantServiceUtil;
+	private final TenantServiceUtil tenantServiceUtil;
+	
+	private final DynamicValidationUtil dynamicValidationUtil;
 
 	@Transactional
 	@Override
@@ -121,123 +124,132 @@ public class AuthServiceImpl implements AuthService{
 	@Override
 	public ResponseEntity<ApiResponseDto> login(JsonNode loginRequest) {
 
-	    String password = loginRequest.path("password").asText(null);
+	    // =====================================================
+	    // 1. DYNAMIC VALIDATION
+	    // =====================================================
 
-	    if (password == null || password.isBlank()) {
-	        throw new InvalidRequestException("Password is required");
-	    }
+	    dynamicValidationUtil.validate(
+	            "LOGIN",
+	            loginRequest
+	    );
 
-	    // Check if tenant was passed in request body
-	    if (com.auth.multitenancy.TenantContext.getCurrentTenant() == null) {
-	        String reqTenantId = loginRequest.path("tenantId").asText(null);
-	        String reqTenantCode = loginRequest.path("tenantCode").asText(null);
-	        String reqSubdomain = loginRequest.path("subdomain").asText(null);
 
-	        String targetTenant = (reqTenantId != null && !reqTenantId.isBlank()) ? reqTenantId :
-	                (reqTenantCode != null && !reqTenantCode.isBlank()) ? reqTenantCode : reqSubdomain;
-
-	        if (targetTenant != null && !targetTenant.isBlank()) {
-	            com.auth.multitenancy.TenantContext.setCurrentTenant(targetTenant);
-	        }
-	    }
+	    // =====================================================
+	    // 2. FIND USER
+	    // =====================================================
 
 	    UserAccounts userAccount;
 
-//	    if (loginRequest.hasNonNull("username")) {
-//
-//	        String username = loginRequest.path("username").asText();
-//
-//	        if (username.isBlank()) {
-//	            throw new InvalidRequestException("Username is required");
-//	        }
-//
-//	        userAccount = userAccountsRepository
-//	                .findByUsername(username)
-//	                .orElseThrow(() ->
-//	                        new InvalidCredentialsException(
-//	                                "Invalid username or password"));
-//
-//	    } 
-	     if (loginRequest.hasNonNull("email")) {
+	    if (loginRequest.hasNonNull("email")
+	            && !loginRequest.path("email").asText().isBlank()) {
 
-	        String email = loginRequest.path("email").asText();
+	        String email =
+	                loginRequest.path("email").asText();
 
-	        if (email.isBlank()) {
-	            throw new InvalidRequestException("Email is required");
-	        }
-
-	        userAccount = userAccountsRepository
-	                .findByEmail(email)
-	                .orElseThrow(() ->
-	                        new InvalidCredentialsException(
-	                                "Invalid email or password"));
+	        userAccount =
+	                userAccountsRepository
+	                        .findByEmail(email)
+	                        .orElseThrow(() ->
+	                                new InvalidCredentialsException(
+	                                        "Invalid email or password"
+	                                )
+	                        );
 
 	    } 
-//	    else if (loginRequest.hasNonNull("contact")) {
+//	    else if (loginRequest.hasNonNull("contact")
+//	            && !loginRequest.path("contact").asText().isBlank()) {
 //
-//	        String contact = loginRequest.path("contact").asText();
+//	        String contact =
+//	                loginRequest.path("contact").asText();
 //
-//	        if (contact.isBlank()) {
-//	            throw new InvalidRequestException("Contact is required");
-//	        }
+//	        userAccount =
+//	                userAccountsRepository
+//	                        .findByContact(contact)
+//	                        .orElseThrow(() ->
+//	                                new InvalidCredentialsException(
+//	                                        "Invalid contact or password"
+//	                                )
+//	                        );
 //
-//	        userAccount = userAccountsRepository
-//	                .findByContact(contact)
-//	                .orElseThrow(() ->
-//	                        new InvalidCredentialsException(
-//	                                "Invalid contact or password"));
-//
-//	    }
+//	    } 
 	    else {
+
 	        throw new InvalidRequestException(
-	                "Username, email or contact is required");
+	                "Email or contact is required"
+	        );
 	    }
+
+
+	    // =====================================================
+	    // 3. PASSWORD
+	    // =====================================================
+
+	    String password =
+	            loginRequest.path("password").asText();
 
 	    if (!passwordEncoder.matches(
 	            password,
 	            userAccount.getPassword())) {
 
 	        throw new InvalidCredentialsException(
-	                "Invalid credentials");
+	                "Invalid credentials"
+	        );
 	    }
 
-	    UserRole userRole = userRoleRepository
-	            .findByUserAccountsUserAccountId(
-	                    userAccount.getUserAccountId())
-	            .orElseThrow(() ->
-	                    new ResourceNotFoundException(
-	                            "Role not assigned to user"));
 
-	    RoleMaster roleMaster = userRole.getRoleMaster();
-	    
-	    TenantDetails tenantDetails = resolveCurrentTenantDetails();
+	    // =====================================================
+	    // 4. ROLE
+	    // =====================================================
 
-	    String token = jwtService.generateToken(
-	    		userRole,tenantDetails
-	    );
-	    
-	    RefreshToken refreshToken = refreshTokenService.createRefreshToken(userAccount);
+	    UserRole userRole =
+	            userRoleRepository
+	                    .findByUserAccountsUserAccountId(
+	                            userAccount.getUserAccountId()
+	                    )
+	                    .orElseThrow(() ->
+	                            new ResourceNotFoundException(
+	                                    "Role not assigned to user"
+	                            )
+	                    );
 
-	    // 6. Response
-//	    Map<String, Object> data = new HashMap<>();
-//
-//	    data.put("accessToken", token);
-//	    data.put("tokenType", "Bearer");
-//	    data.put("userAccountId",
-//	            userAccount.getUserAccountId());
-//	    data.put("username",
-//	            userAccount.getUsername());
-//	    data.put("email",
-//	            userAccount.getEmail());
-//	    data.put("roleName",
-//	            roleMaster.getRoleName());
-	    
-	    LoginResponse loginResponse = LoginResponse.builder()
-	            .accessToken(token)
-	            .refreshToken(refreshToken.getToken())
-	            .build();
-	    		
-	    		
+
+	    // =====================================================
+	    // 5. TENANT DETAILS
+	    // =====================================================
+
+	    TenantDetails tenantDetails =
+	            resolveCurrentTenantDetails();
+
+
+	    // =====================================================
+	    // 6. GENERATE JWT
+	    // =====================================================
+
+	    String token =
+	            jwtService.generateToken(
+	                    userRole,
+	                    tenantDetails
+	            );
+
+
+	    // =====================================================
+	    // 7. REFRESH TOKEN
+	    // =====================================================
+
+	    RefreshToken refreshToken =
+	            refreshTokenService
+	                    .createRefreshToken(userAccount);
+
+
+	    // =====================================================
+	    // 8. RESPONSE
+	    // =====================================================
+
+	    LoginResponse loginResponse =
+	            LoginResponse.builder()
+	                    .accessToken(token)
+	                    .refreshToken(refreshToken.getToken())
+	                    .build();
 
 	    return ResponseEntity.ok(
 	            ApiResponseDto.builder()
