@@ -1,18 +1,23 @@
 package com.tenant.serviceimpl;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tenant.dto.request.AddTenantRequestDto;
-import com.tenant.dto.response.AddTenantResponseDto;
 import com.tenant.dto.response.ApiResponseDto;
+import com.tenant.dto.response.TenantListItemDto;
 import com.tenant.entity.TenantProfile;
 import com.tenant.entity.TenantsDBDetails;
-import com.tenant.enums.TenantStatus;
 import com.tenant.exception.DuplicateResourceException;
+import com.tenant.mapper.TenantListMapper;
 import com.tenant.mapper.TenantProfileMapper;
 import com.tenant.mapper.TenantsDBDetailsMapper;
 import com.tenant.repository.TenantDBDetailsRepository;
@@ -31,6 +36,7 @@ public class TenantManageServiceImpl implements TenantManageService {
     private final TenantProfileRepository   tenantProfileRepository;
     private final TenantsDBDetailsMapper    tenantsDBDetailsMapper;
     private final TenantProfileMapper       tenantProfileMapper;
+    private final TenantListMapper          tenantListMapper;
 
     @Override
     @Transactional
@@ -52,18 +58,12 @@ public class TenantManageServiceImpl implements TenantManageService {
 
         // ── 2. Map request → TenantsDBDetails entity and save ────────────────
         TenantsDBDetails dbDetails = tenantsDBDetailsMapper.toEntity(request);
-//        dbDetails.setStatus(TenantStatus.INACTIVE);
         TenantsDBDetails savedDbDetails = tenantDBDetailsRepository.save(dbDetails);
         log.info("Saved TenantsDBDetails for tenant [{}] with id [{}]",
                 savedDbDetails.getTenantCode(), savedDbDetails.getTenantId());
 
         // ── 3. Map request → TenantProfile entity, wire FK, and save ─────────
         TenantProfile profile = tenantProfileMapper.toEntity(request);
-
-        // The mapper ignores tenantsDBDetails; we set it via the relation field
-        // using the saved entity reference so JPA has the correct FK.
-        // NOTE: We use the generated setter from Lombok @Setter here only to
-        // satisfy the JPA FK requirement; all other field mapping is via mapper.
         profile.setTenantsDBDetails(savedDbDetails);
 
         TenantProfile savedProfile = tenantProfileRepository.save(profile);
@@ -71,13 +71,37 @@ public class TenantManageServiceImpl implements TenantManageService {
                 savedProfile.getTenantProfileId(), savedDbDetails.getTenantCode());
 
         // ── 4. Assemble response ─────────────────────────────────────────────
-//        AddTenantResponseDto responseDto = tenantProfileMapper.toResponseDto(savedDbDetails, savedProfile);
-        
-        ApiResponseDto responseDto = ApiResponseDto.builder()
-				.success(true)
-				.message("Tenant added successfully")
-				.build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponseDto.builder()
+                        .success(true)
+                        .message("Tenant added successfully")
+                        .build());
+    }
 
-         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    @Override
+    public ResponseEntity<ApiResponseDto> getAllTenants(Pageable pageable) {
+
+        // Single JOIN FETCH query with pagination — no N+1
+        Page<TenantProfile> page = tenantProfileRepository.findAllWithDbDetails(pageable);
+        List<TenantListItemDto> content = tenantListMapper.toDtoList(page.getContent());
+
+        log.info("Fetched page [{}/{}] with [{}] tenants",
+                page.getNumber() + 1, page.getTotalPages(), content.size());
+
+        // Build a lightweight pagination metadata map alongside the content
+        Map<String, Object> pageData = new LinkedHashMap<>();
+        pageData.put("content",       content);
+        pageData.put("page",          page.getNumber());
+        pageData.put("size",          page.getSize());
+        pageData.put("totalElements", page.getTotalElements());
+        pageData.put("totalPages",    page.getTotalPages());
+        pageData.put("last",          page.isLast());
+
+        return ResponseEntity.ok(
+                ApiResponseDto.builder()
+                        .success(true)
+                        .message("Tenants fetched successfully")
+                        .data(pageData)
+                        .build());
     }
 }
