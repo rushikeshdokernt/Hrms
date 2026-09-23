@@ -29,7 +29,8 @@ public class SecurityConfig {
                                 "api/v1/auth/refresh",
                                 "/actuator/health",
                                 "api/v1/auth/tenant/init",
-                                "api/v1/tenant/**"
+                                "api/v1/tenant/**",
+                                "api/v1/employee/**"
                         ).permitAll()
 
                         // Everything else requires JWT
