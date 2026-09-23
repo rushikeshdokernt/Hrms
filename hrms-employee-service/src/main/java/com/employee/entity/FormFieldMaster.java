@@ -73,12 +73,6 @@ public class FormFieldMaster extends Auditable {
     @Column(name = "is_visible", nullable = false)
     private Boolean visible;
 
-    @Column(name = "restrict_to", length = 50)
-    private String restrictTo;
-
-    @Column(name = "mask_pattern", length = 100)
-    private String maskPattern;
-
     @Column(name = "is_validation", nullable = false)
     private Boolean validation;
 
@@ -92,6 +86,6 @@ public class FormFieldMaster extends Auditable {
     @Column(name = "is_immutable", nullable = false)
     private Boolean immutable;
 
-    @Column(name = "is_masterdata", nullable = false)
-    private Boolean masterData;
+    @Column(name = "is_default", nullable = false)
+    private Boolean isDefault;
 }

@@ -43,6 +43,9 @@ public class FormMaster extends Auditable {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
+    
+    @Column(name = "is_default")
+    private Boolean isDefault;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")
