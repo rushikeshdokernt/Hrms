@@ -1,7 +1,10 @@
 
 package com.employee.serviceimpl;
 
+import java.sql.Connection;
 import java.util.List;
+
+import javax.sql.DataSource;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -34,9 +37,23 @@ public class OnboardingServiceImpl implements OnboardingService {
     private final FormFieldMasterRepository formFieldMasterRepository;
     private final FormFieldOptionsRepository formFieldOptionsRepository;
     private final FormFieldValidationsRepository formFieldValidationsRepository;
+    private final DataSource dataSource;
 
     @Override
     public ResponseEntity<ApiResponseDto> fetchForm(String formName) {
+    	
+    	  try (Connection connection = dataSource.getConnection()) {
+
+    	        System.out.println("========== DATABASE CONNECTION ==========");
+    	        System.out.println("Database URL  : " + connection.getMetaData().getURL());
+    	        System.out.println("Database User : " + connection.getMetaData().getUserName());
+    	        System.out.println("Database Name : " + connection.getCatalog());
+    	        System.out.println("Schema        : " + connection.getSchema());
+    	        System.out.println("=========================================");
+
+    	    } catch (Exception e) {
+    	        e.printStackTrace();
+    	    }
 
         // 1. Fetch form
         FormMaster formMaster = formMasterRepository

@@ -1,4 +1,4 @@
-package com.auth.multitenancy;
+package com.employee.multitenancy;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,8 +10,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.auth.dto.response.TenantConnectionConfigDto;
-import com.auth.external.tenant.util.TenantServiceUtil;
+import com.employee.external.tenant.dto.TenantConnectionConfigDto;
+import com.employee.external.tenant.util.TenantServiceUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,10 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TenantFilter extends OncePerRequestFilter {
 
-    public static final String HEADER_TENANT_ID = "X-Tenant-Id";
-    public static final String HEADER_TENANT_CODE = "X-Tenant-Code";
+    public static final String HEADER_TENANT_ID        = "X-Tenant-Id";
+    public static final String HEADER_TENANT_CODE      = "X-Tenant-Code";
     public static final String HEADER_TENANT_SUBDOMAIN = "X-Tenant-Subdomain";
-    public static final String HEADER_TENANT_DOMAIN = "X-Tenant-Domain";
+    public static final String HEADER_TENANT_DOMAIN    = "X-Tenant-Domain";
 
     private static final Pattern UUID_PATTERN =
             Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -40,19 +40,20 @@ public class TenantFilter extends OncePerRequestFilter {
             Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
 
     private final TenantDataSourceManager tenantDataSourceManager;
-    private final TenantServiceUtil tenantServiceUtil;
-    private final ObjectMapper objectMapper;
+    private final TenantServiceUtil       tenantServiceUtil;
+    private final ObjectMapper            objectMapper;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
         String tenant = resolveTenant(request);
 
         if (tenant != null && !tenant.isBlank()) {
-            log.debug("Tenant resolved for request [{} {}]: {}", request.getMethod(), request.getRequestURI(), tenant);
-            
-            // Ensure connection pool exists in MultiTenantRoutingDataSource for this tenant
+            log.debug("Tenant resolved for request [{} {}]: {}",
+                    request.getMethod(), request.getRequestURI(), tenant);
+
+            // Ensure HikariCP pool exists for this tenant before the request proceeds
             ensureTenantPoolActive(tenant);
 
             TenantContext.setCurrentTenant(tenant);
@@ -100,81 +101,55 @@ public class TenantFilter extends OncePerRequestFilter {
     }
 
     private String resolveTenant(HttpServletRequest request) {
-        // 1. Check X-Tenant-Id header
-        String tenant = request.getHeader(HEADER_TENANT_ID);
-        if (tenant != null && !tenant.isBlank()) {
-            return tenant.trim();
-        }
 
-        // 2. Check X-Tenant-Subdomain or X-Tenant-Code header
+        // 1. X-Tenant-Id header
+        String tenant = request.getHeader(HEADER_TENANT_ID);
+        if (tenant != null && !tenant.isBlank()) return tenant.trim();
+
+        // 2. X-Tenant-Subdomain or X-Tenant-Code header
         tenant = request.getHeader(HEADER_TENANT_SUBDOMAIN);
-        if (tenant != null && !tenant.isBlank()) {
-            return tenant.trim();
-        }
+        if (tenant != null && !tenant.isBlank()) return tenant.trim();
 
         tenant = request.getHeader(HEADER_TENANT_CODE);
-        if (tenant != null && !tenant.isBlank()) {
-            return tenant.trim();
-        }
+        if (tenant != null && !tenant.isBlank()) return tenant.trim();
 
-        // 3. Check query parameters
+        // 3. Query parameters
         tenant = request.getParameter("tenantId");
-        if (tenant != null && !tenant.isBlank()) {
-            return tenant.trim();
-        }
+        if (tenant != null && !tenant.isBlank()) return tenant.trim();
 
         tenant = request.getParameter("subdomain");
-        if (tenant != null && !tenant.isBlank()) {
-            return tenant.trim();
-        }
+        if (tenant != null && !tenant.isBlank()) return tenant.trim();
 
-        // 4. Extract tenantId from JWT Bearer token (for all authenticated APIs)
+        // 4. JWT Bearer token — extract tenantId claim
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
-            String jwtTenantId = extractTenantIdFromJwt(token);
-            if (jwtTenantId != null && !jwtTenantId.isBlank()) {
-                return jwtTenantId;
-            }
+            String jwtTenantId = extractTenantIdFromJwt(authHeader.substring(7).trim());
+            if (jwtTenantId != null && !jwtTenantId.isBlank()) return jwtTenantId;
         }
 
-        // 5. Extract host from X-Forwarded-Host, Host, Origin, or Referer
+        // 5. Host / X-Forwarded-Host / Origin / Referer
         String hostCandidate = request.getHeader("X-Forwarded-Host");
-        if (hostCandidate == null || hostCandidate.isBlank()) {
-            hostCandidate = request.getHeader("Host");
-        }
-        if (hostCandidate == null || hostCandidate.isBlank()) {
-            hostCandidate = request.getHeader("Origin");
-        }
-        if (hostCandidate == null || hostCandidate.isBlank()) {
-            hostCandidate = request.getHeader("Referer");
-        }
+        if (hostCandidate == null || hostCandidate.isBlank()) hostCandidate = request.getHeader("Host");
+        if (hostCandidate == null || hostCandidate.isBlank()) hostCandidate = request.getHeader("Origin");
+        if (hostCandidate == null || hostCandidate.isBlank()) hostCandidate = request.getHeader("Referer");
 
         if (hostCandidate != null && !hostCandidate.isBlank()) {
             String cleanHost = hostCandidate.toLowerCase().trim();
-            if (cleanHost.contains("://")) {
-                cleanHost = cleanHost.substring(cleanHost.indexOf("://") + 3);
-            }
-            if (cleanHost.contains("/")) {
-                cleanHost = cleanHost.substring(0, cleanHost.indexOf("/"));
-            }
-            if (cleanHost.contains(":")) {
-                cleanHost = cleanHost.substring(0, cleanHost.indexOf(":"));
-            }
+            if (cleanHost.contains("://"))  cleanHost = cleanHost.substring(cleanHost.indexOf("://") + 3);
+            if (cleanHost.contains("/"))    cleanHost = cleanHost.substring(0, cleanHost.indexOf("/"));
+            if (cleanHost.contains(":"))    cleanHost = cleanHost.substring(0, cleanHost.indexOf(":"));
 
-            // If localhost
+            // localhost
             if (cleanHost.equalsIgnoreCase("localhost") || cleanHost.equals("127.0.0.1")) {
                 return "localhost";
             }
-            // If raw IP address (e.g. 172.20.1.62), resolve tenant via domain lookup.
-            // We cannot use the IP octets as a subdomain (e.g. "172"), so we ask the
-            // tenant-service to resolve it by full IP. The result is cached in
-            // TenantServiceUtil, so subsequent requests are fast (no extra Feign calls).
+
+            // Raw IPv4 (e.g. 172.20.1.62) → resolve via tenant-service
             if (IPV4_PATTERN.matcher(cleanHost).matches()) {
                 try {
                     TenantConnectionConfigDto config = tenantServiceUtil.resolveTenantByDomain(cleanHost);
                     if (config != null && config.getTenantCode() != null && !config.getTenantCode().isBlank()) {
-                        log.debug("Resolved tenant [{}] from IP address [{}]", config.getTenantCode(), cleanHost);
+                        log.debug("Resolved tenant [{}] from IP [{}]", config.getTenantCode(), cleanHost);
                         return config.getTenantCode().toLowerCase().trim();
                     }
                 } catch (Exception ex) {
@@ -182,12 +157,12 @@ public class TenantFilter extends OncePerRequestFilter {
                 }
                 return null;
             }
-            // If domain with dots (like hnt.ai or acme.hrms.com)
+
+            // Subdomain (e.g. acme.hrms.com → "acme")
             if (cleanHost.contains(".")) {
                 return cleanHost.substring(0, cleanHost.indexOf('.'));
-            } else {
-                return cleanHost;
             }
+            return cleanHost;
         }
 
         return null;
