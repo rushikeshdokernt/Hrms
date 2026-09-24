@@ -18,6 +18,7 @@ public final class ApiConstants {
 	public static final String REFRESH_TOKEN = "/refresh";
 	public static final String TENANT_INIT = "/tenant/init";
 	
-	
-
+	//Role
+	public static final String ROLE = "/role";
+	public static final String ROLE_PERMISSION_BY_ID = "/{roleId}/permissions";
 }
