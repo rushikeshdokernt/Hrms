@@ -1,5 +1,6 @@
 package com.employee.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,5 +11,7 @@ import com.employee.entity.FormMaster;
 public interface FormMasterRepository extends JpaRepository<FormMaster, UUID>{
 
 	Optional<FormMaster> findByFormName(String formName);
+	
+	List<FormMaster> findAllByOrderBySortOrderAsc();
 
 }

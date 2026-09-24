@@ -15,6 +15,7 @@ import com.employee.service.OnboardingService;
 import lombok.RequiredArgsConstructor;
 
 import static com.employee.constant.ApiConstants.EMPLOYEE;
+import static com.employee.constant.ApiConstants.FORM;
 
 @RestController
 @RequestMapping(EMPLOYEE)
@@ -29,8 +30,5 @@ public class OnboardingController {
 		
 	}
 	
-	@GetMapping("/form")
-	public ResponseEntity<ApiResponseDto> fetchForm(@RequestParam String formName){
-		return onboardingService.fetchForm(formName);
-	}
+	
 }

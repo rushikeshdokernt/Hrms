@@ -45,8 +45,9 @@ public class FormSectionMaster extends Auditable {
     @Column(name = "section_name", length = 1000)
     private String sectionName;
 
+    @Builder.Default
     @Column(name = "is_visible", nullable = false)
-    private Boolean visible;
+    private Boolean visible = true;
 
     @Column(name = "sort_order")
     private Integer sortOrder;
@@ -55,6 +56,7 @@ public class FormSectionMaster extends Auditable {
     @Column(name = "addition_detail", columnDefinition = "jsonb")
     private JsonNode additionDetail;
 
+    @Builder.Default
     @Column(name = "is_immutable", nullable = false)
-    private Boolean immutable;
+    private Boolean immutable = true;
 }
