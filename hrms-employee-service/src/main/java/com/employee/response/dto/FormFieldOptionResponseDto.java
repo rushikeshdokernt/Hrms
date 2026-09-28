@@ -12,7 +12,7 @@ import lombok.Setter;
 public class FormFieldOptionResponseDto {
 
     private UUID fieldOptionId;
-    private String optionLabel;
+    private String optionKey;
     private String optionValue;
     private Integer sortOrder;
 }

@@ -31,24 +31,23 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @SQLRestriction("deleted_date IS NULL")
-public class EmployeeFormData extends Auditable {
+public class FormFieldValues extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "form_data_id", nullable = false, updatable = false)
-    private UUID formDataId;
+    @Column(name = "form_filed_values_id", nullable = false, updatable = false)
+    private UUID formFiledValuesId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
-    private EmployeeMaster employeeMaster;
-
+    @JoinColumn(name = "form_submission_id")
+    private FormSubmission formSubmission;
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "form_section_id")
-    private FormSectionMaster formSectionMaster;
+    @JoinColumn(name = "field_id")
+    private FormFieldMaster formFieldMaster;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "field_data", columnDefinition = "jsonb")
-    private JsonNode fieldData;
+    @Column(name = "field_data", columnDefinition = "TEXT")
+    private String formFieldData;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")

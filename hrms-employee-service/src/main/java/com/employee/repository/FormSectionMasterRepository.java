@@ -9,7 +9,9 @@ import com.employee.entity.FormSectionMaster;
 
 public interface FormSectionMasterRepository extends JpaRepository<FormSectionMaster, UUID>{
 
-	List<FormSectionMaster> findByFormMasterFormId(UUID formId);
+	List<FormSectionMaster> findByFormVersionsFormVersionId(UUID formVersionId);
+
+	//List<FormSectionMaster> findByFormMasterFormId(UUID formId);
 
 
 }

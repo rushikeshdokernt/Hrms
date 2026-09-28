@@ -39,11 +39,14 @@ public class FormSectionMaster extends Auditable {
     private UUID formSectionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "form_id")
-    private FormMaster formMaster;
+    @JoinColumn(name = "form_version_id", nullable = false)
+    private FormVersions formVersions;
 
     @Column(name = "section_name", length = 1000)
     private String sectionName;
+    
+    @Column(name = "section_description", length = 1000)
+    private String sectionDescription;
 
     @Builder.Default
     @Column(name = "is_visible", nullable = false)
@@ -51,7 +54,7 @@ public class FormSectionMaster extends Auditable {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
-
+    
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")
     private JsonNode additionDetail;

@@ -6,10 +6,13 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
+import com.employee.enums.FormStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,15 +37,19 @@ public class FormMaster extends Auditable {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "form_id", nullable = false, updatable = false)
     private UUID formId;
+    
+    @Column(name = "form_code", length = 100,nullable = false, unique = true)
+    private String formCode;
 
     @Column(name = "form_name", length = 1000)
     private String formName;
+    
+    @Column(name = "form_description", length = 1000)
+    private String formDescription;
 
-    @Column(name = "is_visible", nullable = false)
-    private Boolean visible;
-
-    @Column(name = "sort_order")
-    private Integer sortOrder;
+    @Column(name = "form_status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private FormStatus formStatus ;
     
     @Column(name = "is_default")
     private Boolean isDefault;

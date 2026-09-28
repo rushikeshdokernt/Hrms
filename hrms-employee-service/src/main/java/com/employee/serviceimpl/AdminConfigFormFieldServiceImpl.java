@@ -2,6 +2,7 @@ package com.employee.serviceimpl;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -15,14 +16,16 @@ import com.employee.constant.ResponseMessageConstant;
 import com.employee.entity.FormFieldMaster;
 import com.employee.entity.FormMaster;
 import com.employee.entity.FormSectionMaster;
+import com.employee.entity.FormVersions;
+import com.employee.enums.FieldType;
 import com.employee.exception.ResourceNotFoundException;
 import com.employee.mapper.FormMasterMapper;
 import com.employee.mapper.FormSectionMapper;
 import com.employee.repository.FormFieldMasterRepository;
 import com.employee.repository.FormFieldOptionsRepository;
-import com.employee.repository.FormFieldValidationsRepository;
 import com.employee.repository.FormMasterRepository;
 import com.employee.repository.FormSectionMasterRepository;
+import com.employee.repository.FormVersionsRepository;
 import com.employee.request.dto.AddFormSectionRequestDto;
 import com.employee.request.dto.UpdateFormSectionRequestDto;
 import com.employee.response.dto.ApiResponseDto;
@@ -32,6 +35,8 @@ import com.employee.response.dto.FormFieldValidationResponseDto;
 import com.employee.response.dto.FormResponseDto;
 import com.employee.response.dto.FormSectionResponseDto;
 import com.employee.service.AdminConfigFormFieldService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -47,15 +52,16 @@ public class AdminConfigFormFieldServiceImpl implements AdminConfigFormFieldServ
 	private final FormSectionMasterRepository formSectionMasterRepository;
 	private final FormFieldMasterRepository formFieldMasterRepository;
 	private final FormFieldOptionsRepository formFieldOptionsRepository;
-	private final FormFieldValidationsRepository formFieldValidationsRepository;
 
 	private final FormMasterMapper formMasterMapper;
 	private final FormSectionMapper formSectionMapper;
+	
+	private final FormVersionsRepository formVersionsRepository;
 
 	@Override
 	public ResponseEntity<ApiResponseDto> getFormTypes() {
 
-		List<FormMaster> forms = formMasterRepository.findAllByOrderBySortOrderAsc();
+		List<FormMaster> forms = formMasterRepository.findAll();
 
 		List<FormResponseDto> response = formMasterMapper.toResponseDtoList(forms);
 
@@ -67,22 +73,22 @@ public class AdminConfigFormFieldServiceImpl implements AdminConfigFormFieldServ
 
 	@Override
 	public ResponseEntity<ApiResponseDto> fetchForm(String formName) {
-
-		// 1. Fetch form
-		FormMaster formMaster = formMasterRepository.findByFormName(formName)
-				.orElseThrow(() -> new ResourceNotFoundException("Form not exists with name " + formName));
-
+		
+		FormVersions formVersions = formVersionsRepository
+		        .findByFormMasterFormName(formName)
+		        .orElseThrow(() -> new ResourceNotFoundException(
+		                "Form version not found for form name: " + formName
+		        ));
 		// 2. Fetch sections
 		List<FormSectionMaster> formSectionList = formSectionMasterRepository
-				.findByFormMasterFormId(formMaster.getFormId());
+				.findByFormVersionsFormVersionId(formVersions.getFormVersionId());
 
 		// 3. Map sections
 		List<FormSectionResponseDto> sectionResponseList = formSectionList.stream().map(this::mapSection).toList();
 
 		// 4. Build form response
-		FormResponseDto response = FormResponseDto.builder().formId(formMaster.getFormId())
-				.formName(formMaster.getFormName()).visible(formMaster.getVisible())
-				.sortOrder(formMaster.getSortOrder()).sections(sectionResponseList).build();
+		FormResponseDto response = FormResponseDto.builder().formId(formVersions.getFormMaster().getFormId())
+				.formName(formVersions.getFormMaster().getFormName()).build();
 
 		// 5. Return response
 		return ResponseEntity
@@ -105,117 +111,90 @@ public class AdminConfigFormFieldServiceImpl implements AdminConfigFormFieldServ
 
 		List<FormFieldOptionResponseDto> optionResponseList = List.of();
 
-		if ("DROPDOWN".equalsIgnoreCase(field.getFieldType())) {
+		if (field.getFieldType().equals(FieldType.DROPDOWN)) {
 
 			optionResponseList = formFieldOptionsRepository.findByFormFieldMasterFieldId(field.getFieldId()).stream()
 					.map(option -> FormFieldOptionResponseDto.builder().fieldOptionId(option.getFieldOptionId())
-							.optionLabel(option.getOptionLabel()).optionValue(option.getOptionValue())
+							.optionKey(option.getOptionKey()).optionValue(option.getOptionValue())
 							.sortOrder(option.getSortOrder()).build())
 					.toList();
 		}
 
-		List<FormFieldValidationResponseDto> validationResponseList = formFieldValidationsRepository
-				.findByFormFieldMasterFieldId(field.getFieldId()).stream()
-				.map(validation -> FormFieldValidationResponseDto.builder()
-						.fieldValidationId(validation.getFieldValidationId())
-						.validationType(validation.getValidationType()).validationValue(validation.getValidationValue())
-						.errorMessage(validation.getErrorMessage()).sortOrder(validation.getSortOrder()).build())
-				.toList();
+		JsonNode validationConfig = field.getValidationConfig();
 
 		return FormFieldResponseDto.builder().fieldId(field.getFieldId()).fieldKey(field.getFieldKey())
-				.label(field.getLabel()).fieldType(field.getFieldType()).placeholder(field.getPlaceholder())
-				.defaultValue(field.getDefaultValue()).required(field.getRequired()).disabled(field.getDisabled())
-				.readonly(field.getReadonly()).visible(field.getVisible()).validation(field.getValidation())
-				.sortOrder(field.getSortOrder()).immutable(field.getImmutable()).options(optionResponseList)
-				.validations(validationResponseList).build();
+				.label(field.getLabel()).fieldType(field.getFieldType().name()).placeholder(field.getPlaceholder())
+				.required(field.getIsRequired()).disabled(field.getDisabled()).readonly(field.getReadonly())
+				.visible(field.getVisible()).sortOrder(field.getSortOrder()).options(optionResponseList).build();
 	}
 
 	@Override
 	@Transactional
-	public ResponseEntity<ApiResponseDto> addFormSection(
-	        HttpServletRequest request,
-	        AddFormSectionRequestDto addFormSectionRequestDto) {
+	public ResponseEntity<ApiResponseDto> addFormSection(HttpServletRequest request,
+			AddFormSectionRequestDto addFormSectionRequestDto) {
 
-	    UUID formId = addFormSectionRequestDto.getFormId();
+		UUID formId = addFormSectionRequestDto.getFormId();
 
-	    FormMaster formMaster = formMasterRepository.findById(formId)
-	            .orElseThrow(() ->
-	                    new ResourceNotFoundException(
-	                            "Form not found with id: " + formId));
+		FormMaster formMaster = formMasterRepository.findById(formId)
+				.orElseThrow(() -> new ResourceNotFoundException("Form not found with id: " + formId));
 
-	    FormSectionMaster formSectionMaster =
-	            formSectionMapper.toEntity(addFormSectionRequestDto);
+		FormSectionMaster formSectionMaster = formSectionMapper.toEntity(addFormSectionRequestDto);
 
-	    formSectionMaster.setFormMaster(formMaster);
+		FormVersions formVersions = formVersionsRepository.findByFormMasterFormId(formId)
+				.orElseThrow(()-> new ResourceNotFoundException("Form version not found for form id: " + formId));
+		
+		formVersions.setFormMaster(formMaster);
+		formSectionMaster.setFormVersions(formVersions);
 
-	    FormSectionMaster savedSection =
-	            formSectionMasterRepository.save(formSectionMaster);
+		FormSectionMaster savedSection = formSectionMasterRepository.save(formSectionMaster);
 
-	    FormSectionResponseDto response =
-	            formSectionMapper.toResponse(savedSection);
+		FormSectionResponseDto response = formSectionMapper.toResponse(savedSection);
 
-	    ApiResponseDto apiResponse = ApiResponseDto.builder()
-	            .success(true)
-	            .message(ResponseMessageConstant.FORM_SECTION_CREATED_SUCCESSFULLY)
-	            .data(response)
-	            .build();
+		ApiResponseDto apiResponse = ApiResponseDto.builder().success(true)
+				.message(ResponseMessageConstant.FORM_SECTION_CREATED_SUCCESSFULLY).data(response).build();
 
-	    return ResponseEntity
-	            .status(HttpStatus.CREATED)
-	            .body(apiResponse);
+		return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
 	}
 
 	@Override
 	@Transactional
-	public ResponseEntity<ApiResponseDto> updateFormSection(
-	        HttpServletRequest request,
-	        UpdateFormSectionRequestDto requestDto) {
+	public ResponseEntity<ApiResponseDto> updateFormSection(HttpServletRequest request,
+			UpdateFormSectionRequestDto requestDto) {
 
-	    // 1. Fetch existing section (SQLRestriction filters deleted rows)
-	    FormSectionMaster section = formSectionMasterRepository.findById(requestDto.getFormSectionId())
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Form section not found with id: " + requestDto.getFormSectionId()));
+		// 1. Fetch existing section (SQLRestriction filters deleted rows)
+		FormSectionMaster section = formSectionMasterRepository.findById(requestDto.getFormSectionId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Form section not found with id: " + requestDto.getFormSectionId()));
 
-	    // 2. Update only section name
-	    section.setSectionName(requestDto.getSectionName());
+		// 2. Update only section name
+		section.setSectionName(requestDto.getSectionName());
 
-	    // 3. Persist
-	    FormSectionMaster updatedSection = formSectionMasterRepository.save(section);
+		// 3. Persist
+		FormSectionMaster updatedSection = formSectionMasterRepository.save(section);
 
-	    // 4. Map to response
-	    FormSectionResponseDto response = formSectionMapper.toResponse(updatedSection);
+		// 4. Map to response
+		FormSectionResponseDto response = formSectionMapper.toResponse(updatedSection);
 
-	    return ResponseEntity.ok(
-	            ApiResponseDto.builder()
-	                    .success(true)
-	                    .message(ResponseMessageConstant.FORM_SECTION_UPDATED_SUCCESSFULLY)
-	                    .data(response)
-	                    .build());
+		return ResponseEntity.ok(ApiResponseDto.builder().success(true)
+				.message(ResponseMessageConstant.FORM_SECTION_UPDATED_SUCCESSFULLY).data(response).build());
 	}
 
 	@Override
 	@Transactional
-	public ResponseEntity<ApiResponseDto> deleteFormSection(
-	        HttpServletRequest request,
-	        UUID formSectionId) {
+	public ResponseEntity<ApiResponseDto> deleteFormSection(HttpServletRequest request, UUID formSectionId) {
 
-	    // 1. Fetch existing section (SQLRestriction ensures it is not already deleted)
-	    FormSectionMaster section = formSectionMasterRepository.findById(formSectionId)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Form section not found with id: " + formSectionId));
+		// 1. Fetch existing section (SQLRestriction ensures it is not already deleted)
+		FormSectionMaster section = formSectionMasterRepository.findById(formSectionId)
+				.orElseThrow(() -> new ResourceNotFoundException("Form section not found with id: " + formSectionId));
 
-	    // 2. Soft delete — set deletedDate; @SQLRestriction will hide it going forward
-	    section.setDeletedDate(java.time.OffsetDateTime.now());
-	    section.setDeletedBy(request.getHeader("X-User") != null
-	            ? request.getHeader("X-User") : "system");
+		// 2. Soft delete — set deletedDate; @SQLRestriction will hide it going forward
+		section.setDeletedDate(java.time.OffsetDateTime.now());
+		section.setDeletedBy(request.getHeader("X-User") != null ? request.getHeader("X-User") : "system");
 
-	    formSectionMasterRepository.save(section);
+		formSectionMasterRepository.save(section);
 
-	    return ResponseEntity.ok(
-	            ApiResponseDto.builder()
-	                    .success(true)
-	                    .message(ResponseMessageConstant.FORM_SECTION_DELETED_SUCCESSFULLY)
-	                    .build());
+		return ResponseEntity.ok(ApiResponseDto.builder().success(true)
+				.message(ResponseMessageConstant.FORM_SECTION_DELETED_SUCCESSFULLY).build());
 	}
 
 }

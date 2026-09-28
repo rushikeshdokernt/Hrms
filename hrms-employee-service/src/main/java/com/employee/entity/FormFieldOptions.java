@@ -42,8 +42,8 @@ public class FormFieldOptions extends Auditable {
     @JoinColumn(name = "field_id")
     private FormFieldMaster formFieldMaster;
 
-    @Column(name = "option_label", length = 255)
-    private String optionLabel;
+    @Column(name = "option_key", length = 255)
+    private String optionKey;
 
     @Column(name = "option_value", length = 255)
     private String optionValue;

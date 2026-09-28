@@ -11,7 +11,6 @@ import com.employee.response.dto.FormSectionResponseDto;
 public interface FormSectionMapper {
 
     @Mapping(target = "formSectionId", ignore = true)
-    @Mapping(target = "formMaster", ignore = true)
     @Mapping(target = "visible", ignore = true)
     @Mapping(target = "additionDetail", ignore = true)
     @Mapping(target = "immutable", ignore = true)
