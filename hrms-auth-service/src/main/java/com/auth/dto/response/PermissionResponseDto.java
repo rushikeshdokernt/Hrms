@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PermissionResponseDto {
-	private UUID rolePermissionId;
+	//private UUID rolePermissionId;
 	private UUID useCaseId;
 	private String useCaseName;
 	private boolean viewAccess;

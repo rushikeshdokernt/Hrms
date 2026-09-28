@@ -15,4 +15,11 @@ public interface RoleManageService {
 
 	ResponseEntity<ApiResponseDto> getRolePermissions(HttpServletRequest request, UUID roleId);
 
+	ResponseEntity<ApiResponseDto> getRoleList();
+
+	ResponseEntity<ApiResponseDto> getRoleDropdownList();
+
+	ResponseEntity<ApiResponseDto> updateRoleUsecases(HttpServletRequest request, UUID roleId,
+			AddRoleRequestDto requestDto);
+
 }

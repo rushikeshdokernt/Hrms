@@ -21,4 +21,5 @@ public final class ApiConstants {
 	//Role
 	public static final String ROLE = "/role";
 	public static final String ROLE_PERMISSION_BY_ID = "/{roleId}/permissions";
+	public static final String DROPDOWN_LIST = "/dropdown";
 }

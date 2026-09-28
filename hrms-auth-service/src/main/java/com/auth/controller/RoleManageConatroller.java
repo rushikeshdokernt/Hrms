@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import static com.auth.constant.ApiConstants.AUTH;
 import static com.auth.constant.ApiConstants.ROLE;
 import static com.auth.constant.ApiConstants.ROLE_PERMISSION_BY_ID;
+import static com.auth.constant.ApiConstants.DROPDOWN_LIST;
 
 import java.util.UUID;
 
@@ -37,5 +39,30 @@ public class RoleManageConatroller {
 	@GetMapping(ROLE_PERMISSION_BY_ID)
 	public ResponseEntity<ApiResponseDto> getRolePermissions(HttpServletRequest request, @PathVariable UUID roleId) {
 		return roleManageService.getRolePermissions(request, roleId);
+	}
+	
+	
+	@PutMapping("/{roleId}/usecases")
+	public ResponseEntity<ApiResponseDto> updateRoleUsecases(
+	        HttpServletRequest request,
+	        @PathVariable UUID roleId,
+	        @RequestBody AddRoleRequestDto requestDto) {
+
+	    return roleManageService.updateRoleUsecases(
+	            request,
+	            roleId,
+	            requestDto
+	    );
+	}
+	
+	
+	@GetMapping
+	public ResponseEntity<ApiResponseDto> getRoleList(){
+		return roleManageService.getRoleList();
+	}
+	
+	@GetMapping(DROPDOWN_LIST)
+	public ResponseEntity<ApiResponseDto> getRoleDropdownList(){
+		return roleManageService.getRoleDropdownList();
 	}
 }
