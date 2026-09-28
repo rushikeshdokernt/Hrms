@@ -1,5 +1,10 @@
 package com.employee.controller;
 
+import static com.employee.constant.ApiConstants.DELETE_SECTION;
+import static com.employee.constant.ApiConstants.FORM;
+import static com.employee.constant.ApiConstants.FORM_FIELD;
+import static com.employee.constant.ApiConstants.SECTION;
+
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -20,12 +25,6 @@ import com.employee.service.AdminConfigFormFieldService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-
-import static com.employee.constant.ApiConstants.DELETE_SECTION;
-import static com.employee.constant.ApiConstants.FORM;
-import static com.employee.constant.ApiConstants.FORM_FIELD;
-import static com.employee.constant.ApiConstants.SECTION;
-
 import lombok.AllArgsConstructor;
 
 @RestController

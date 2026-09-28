@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.employee.entity.FormMaster;
 import com.employee.entity.FormVersions;
 
 public interface FormVersionsRepository extends JpaRepository<FormVersions, UUID> {

@@ -1,11 +1,9 @@
 package com.employee.serviceimpl;
 
-import java.sql.Connection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import static com.employee.constant.ResponseMessageConstant.FORM_TYPES_FETCHED_SUCCESSFULLY;
 
-import javax.sql.DataSource;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,17 +29,12 @@ import com.employee.request.dto.UpdateFormSectionRequestDto;
 import com.employee.response.dto.ApiResponseDto;
 import com.employee.response.dto.FormFieldOptionResponseDto;
 import com.employee.response.dto.FormFieldResponseDto;
-import com.employee.response.dto.FormFieldValidationResponseDto;
 import com.employee.response.dto.FormResponseDto;
 import com.employee.response.dto.FormSectionResponseDto;
 import com.employee.service.AdminConfigFormFieldService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
-
-import static com.employee.constant.ResponseMessageConstant.FORM_TYPES_FETCHED_SUCCESSFULLY;
-
 import lombok.AllArgsConstructor;
 
 @Service
