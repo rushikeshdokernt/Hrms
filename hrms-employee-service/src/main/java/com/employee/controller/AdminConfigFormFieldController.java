@@ -4,6 +4,7 @@ import static com.employee.constant.ApiConstants.DELETE_SECTION;
 import static com.employee.constant.ApiConstants.FORM;
 import static com.employee.constant.ApiConstants.FORM_FIELD;
 import static com.employee.constant.ApiConstants.SECTION;
+import static com.employee.constant.ApiConstants.DEFINATION;
 
 import java.util.UUID;
 
@@ -31,53 +32,60 @@ import lombok.AllArgsConstructor;
 @RequestMapping(FORM_FIELD)
 @AllArgsConstructor
 public class AdminConfigFormFieldController {
-	
+
 	private final AdminConfigFormFieldService adminConfigFormFieldService;
-	
-	
+
+	@GetMapping(DEFINATION)
+	public ResponseEntity<ApiResponseDto> getFormDefination() {
+		return adminConfigFormFieldService.getFormDefination();
+	}
+
+	@PostMapping(FORM)
+	public ResponseEntity<ApiResponseDto> createForm() {
+
+		return null;
+	}
+
 	@GetMapping()
-	public ResponseEntity<ApiResponseDto> getFormTypes(){
-		
+	public ResponseEntity<ApiResponseDto> getFormTypes() {
+
 		return adminConfigFormFieldService.getFormTypes();
 	}
-	
+
 	@GetMapping(FORM)
-	public ResponseEntity<ApiResponseDto> fetchForm(@RequestParam String formName){
+	public ResponseEntity<ApiResponseDto> fetchForm(@RequestParam String formName) {
 		return adminConfigFormFieldService.fetchForm(formName);
-	}
-	
-	/**
-	 * POST /api/v1/employee/admin-config/form-fields/section
-	 * Creates a new form section.
-	 */
-	@PostMapping(SECTION)
-	public ResponseEntity<ApiResponseDto> addFormSection(
-			@Valid @RequestBody AddFormSectionRequestDto addFormSectionRequestDto,
-			HttpServletRequest request
-			){
-		return adminConfigFormFieldService.addFormSection(request, addFormSectionRequestDto);
-		
 	}
 
 	/**
-	 * PUT /api/v1/employee/admin-config/form-fields/section/update
-	 * Updates section name. formSectionId + sectionName come from request body.
+	 * POST /api/v1/employee/admin-config/form-fields/section Creates a new form
+	 * section.
+	 */
+	@PostMapping(SECTION)
+	public ResponseEntity<ApiResponseDto> addFormSection(
+			@Valid @RequestBody AddFormSectionRequestDto addFormSectionRequestDto, HttpServletRequest request) {
+		return adminConfigFormFieldService.addFormSection(request, addFormSectionRequestDto);
+
+	}
+
+	/**
+	 * PUT /api/v1/employee/admin-config/form-fields/section/update Updates section
+	 * name. formSectionId + sectionName come from request body.
 	 */
 	@PutMapping(SECTION)
-	public ResponseEntity<ApiResponseDto> updateFormSection(
-			@Valid @RequestBody UpdateFormSectionRequestDto requestDto,
+	public ResponseEntity<ApiResponseDto> updateFormSection(@Valid @RequestBody UpdateFormSectionRequestDto requestDto,
 			HttpServletRequest request) {
 
 		return adminConfigFormFieldService.updateFormSection(request, requestDto);
 	}
 
 	/**
-	 * DELETE /api/v1/employee/admin-config/form-fields/section/delete/{formSectionId}
+	 * DELETE
+	 * /api/v1/employee/admin-config/form-fields/section/delete/{formSectionId}
 	 * Soft-deletes a form section (sets deleted_date; filtered by @SQLRestriction).
 	 */
 	@DeleteMapping(DELETE_SECTION)
-	public ResponseEntity<ApiResponseDto> deleteFormSection(
-			@PathVariable UUID formSectionId,
+	public ResponseEntity<ApiResponseDto> deleteFormSection(@PathVariable UUID formSectionId,
 			HttpServletRequest request) {
 
 		return adminConfigFormFieldService.deleteFormSection(request, formSectionId);

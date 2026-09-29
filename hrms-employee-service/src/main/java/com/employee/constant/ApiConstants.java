@@ -18,6 +18,8 @@ public final class ApiConstants {
 	
 	public static final String SECTION= "/section";
 	
+	public static final String DEFINATION= "/defination";
+	
 	public static final String DELETE_SECTION = "/section/{formSectionId}";
 	
 	

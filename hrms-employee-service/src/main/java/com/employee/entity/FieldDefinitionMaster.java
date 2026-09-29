@@ -61,9 +61,6 @@ public class FieldDefinitionMaster extends Auditable {
     @Column(name = "field_type", nullable = false, length = 30)
     private FieldType fieldType;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "filter_operators_json", columnDefinition = "jsonb")
-    private JsonNode filterOperatorsJson;
 
     @Column(name = "filterable", nullable = false)
     private Boolean filterable;

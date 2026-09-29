@@ -3,7 +3,9 @@ package com.employee.serviceimpl;
 import static com.employee.constant.ResponseMessageConstant.FORM_TYPES_FETCHED_SUCCESSFULLY;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,14 +13,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.employee.constant.ResponseMessageConstant;
+import com.employee.entity.FieldDefinitionMaster;
 import com.employee.entity.FormFieldMaster;
 import com.employee.entity.FormMaster;
 import com.employee.entity.FormSectionMaster;
 import com.employee.entity.FormVersions;
+import com.employee.enums.FieldDefinitionCategory;
 import com.employee.enums.FieldType;
 import com.employee.exception.ResourceNotFoundException;
+import com.employee.mapper.FieldDefinitionMasterMapper;
 import com.employee.mapper.FormMasterMapper;
 import com.employee.mapper.FormSectionMapper;
+import com.employee.repository.FieldDefinationRepository;
 import com.employee.repository.FormFieldMasterRepository;
 import com.employee.repository.FormFieldOptionsRepository;
 import com.employee.repository.FormMasterRepository;
@@ -27,6 +33,7 @@ import com.employee.repository.FormVersionsRepository;
 import com.employee.request.dto.AddFormSectionRequestDto;
 import com.employee.request.dto.UpdateFormSectionRequestDto;
 import com.employee.response.dto.ApiResponseDto;
+import com.employee.response.dto.FieldDefinitionCategoryResponseDto;
 import com.employee.response.dto.FormFieldOptionResponseDto;
 import com.employee.response.dto.FormFieldResponseDto;
 import com.employee.response.dto.FormResponseDto;
@@ -45,6 +52,8 @@ public class AdminConfigFormFieldServiceImpl implements AdminConfigFormFieldServ
 	private final FormSectionMasterRepository formSectionMasterRepository;
 	private final FormFieldMasterRepository formFieldMasterRepository;
 	private final FormFieldOptionsRepository formFieldOptionsRepository;
+	private final FieldDefinationRepository fieldDefinationRepository;
+	private final FieldDefinitionMasterMapper fieldDefinitionMasterMapper;
 
 	private final FormMasterMapper formMasterMapper;
 	private final FormSectionMapper formSectionMapper;
@@ -188,6 +197,40 @@ public class AdminConfigFormFieldServiceImpl implements AdminConfigFormFieldServ
 
 		return ResponseEntity.ok(ApiResponseDto.builder().success(true)
 				.message(ResponseMessageConstant.FORM_SECTION_DELETED_SUCCESSFULLY).build());
+	}
+
+	@Override
+	public ResponseEntity<ApiResponseDto> getFormDefination() {
+
+	    List<FieldDefinitionMaster> fieldDefinitions =
+	            fieldDefinationRepository.findAll();
+
+	    Map<FieldDefinitionCategory, List<FieldDefinitionMaster>> grouped =
+	            fieldDefinitions.stream()
+	                    .collect(Collectors.groupingBy(
+	                            FieldDefinitionMaster::getFieldDefinitionCategory
+	                    ));
+
+	    List<FieldDefinitionCategoryResponseDto> response =
+	            grouped.entrySet()
+	                    .stream()
+	                    .map(entry -> FieldDefinitionCategoryResponseDto.builder()
+	                            .category(entry.getKey())
+	                            .fields(
+	                                    fieldDefinitionMasterMapper
+	                                            .toResponseDto(entry.getValue())
+	                            )
+	                            .build()
+	                    )
+	                    .toList();
+
+	    return ResponseEntity.ok(
+	            ApiResponseDto.builder()
+	                    .success(true)
+	                    .message("Form definitions fetched successfully")
+	                    .data(response)
+	                    .build()
+	    );
 	}
 
 }

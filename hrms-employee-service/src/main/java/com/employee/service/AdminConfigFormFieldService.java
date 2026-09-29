@@ -22,4 +22,6 @@ public interface AdminConfigFormFieldService {
 
 	ResponseEntity<ApiResponseDto> deleteFormSection(HttpServletRequest request, UUID formSectionId);
 
+	ResponseEntity<ApiResponseDto> getFormDefination();
+
 }
