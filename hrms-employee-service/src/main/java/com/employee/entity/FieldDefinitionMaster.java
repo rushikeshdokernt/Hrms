@@ -4,6 +4,7 @@ package com.employee.entity;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 import com.employee.enums.DataType;
@@ -33,6 +34,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLRestriction("deleted_date IS NULL")
 public class FieldDefinitionMaster extends Auditable {
 
     @Id

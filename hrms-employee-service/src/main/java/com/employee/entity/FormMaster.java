@@ -38,8 +38,8 @@ public class FormMaster extends Auditable {
     @Column(name = "form_id", nullable = false, updatable = false)
     private UUID formId;
     
-    @Column(name = "form_code", length = 100,nullable = false, unique = true)
-    private String formCode;
+    @Column(name = "form_type", length = 100,nullable = false, unique = true)
+    private String formType;
 
     @Column(name = "form_name", length = 1000)
     private String formName;
@@ -50,9 +50,6 @@ public class FormMaster extends Auditable {
     @Column(name = "form_status", nullable = false)
     @Enumerated(EnumType.STRING)
     private FormStatus formStatus ;
-    
-    @Column(name = "is_default")
-    private Boolean isDefault;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "addition_detail", columnDefinition = "jsonb")

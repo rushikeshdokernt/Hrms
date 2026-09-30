@@ -11,4 +11,10 @@ public interface FormFieldMasterRepository extends JpaRepository<FormFieldMaster
 
 	List<FormFieldMaster> findByFormSectionMasterFormSectionId(UUID formSectionId);
 
+	/**
+	 * Fetches all FormFieldMaster records belonging to a specific FormMaster.
+	 * Navigation: FormFieldMaster → formSectionMaster → formVersions → formMaster → formId
+	 */
+	List<FormFieldMaster> findAllByFormSectionMasterFormVersionsFormMasterFormId(UUID formId);
+
 }

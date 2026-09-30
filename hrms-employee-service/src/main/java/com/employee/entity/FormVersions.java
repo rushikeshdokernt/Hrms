@@ -3,6 +3,8 @@ package com.employee.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import com.employee.enums.FormStatus;
 
 import jakarta.persistence.Column;
@@ -27,6 +29,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLRestriction("deleted_date IS NULL")
 public class FormVersions extends Auditable {
 
     @Id

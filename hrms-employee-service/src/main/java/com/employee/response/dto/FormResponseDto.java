@@ -1,7 +1,6 @@
 package com.employee.response.dto;
 
 
-import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -18,7 +17,6 @@ public class FormResponseDto {
 
     private UUID formId;
     private String formName;
-    private Boolean visible;
-    private Integer sortOrder;
-    private List<FormSectionResponseDto> sections;
+    private String formType;
+    private String formDescription;
 }

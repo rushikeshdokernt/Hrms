@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.employee.entity.FieldDefinitionMaster;
 
-public interface FieldDefinationRepository extends JpaRepository<FieldDefinitionMaster, UUID>{
+public interface FieldDefinitionMasterRepository extends JpaRepository<FieldDefinitionMaster, UUID>{
 
 }

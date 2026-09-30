@@ -56,7 +56,6 @@ public class FormFieldMaster extends Auditable {
     
     @Column(name = "field_description", length = 1000)
     private String fieldDescription;
-
     
     @Enumerated(EnumType.STRING)
     @Column(name = "data_type", nullable = false, length = 20)

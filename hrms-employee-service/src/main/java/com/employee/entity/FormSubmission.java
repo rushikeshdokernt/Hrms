@@ -2,6 +2,8 @@ package com.employee.entity;
 
 import java.util.UUID;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import com.employee.enums.FormSubmissionStatus;
 
 import jakarta.persistence.Column;
@@ -26,6 +28,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@SQLRestriction("deleted_date IS NULL")
 public class FormSubmission  extends Auditable {
 
     @Id

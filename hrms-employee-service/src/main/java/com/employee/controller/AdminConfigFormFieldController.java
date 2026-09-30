@@ -1,10 +1,12 @@
 package com.employee.controller;
 
+import static com.employee.constant.ApiConstants.DELETE_FORM;
 import static com.employee.constant.ApiConstants.DELETE_SECTION;
 import static com.employee.constant.ApiConstants.FORM;
 import static com.employee.constant.ApiConstants.FORM_FIELD;
 import static com.employee.constant.ApiConstants.SECTION;
 import static com.employee.constant.ApiConstants.DEFINATION;
+import static com.employee.constant.ApiConstants.UPDATE_FORM;
 
 import java.util.UUID;
 
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.employee.request.dto.AddFormSectionRequestDto;
+import com.employee.request.dto.CreateFormDto;
+import com.employee.request.dto.UpdateFormRequestDto;
 import com.employee.request.dto.UpdateFormSectionRequestDto;
 import com.employee.response.dto.ApiResponseDto;
 import com.employee.service.AdminConfigFormFieldService;
@@ -38,12 +42,6 @@ public class AdminConfigFormFieldController {
 	@GetMapping(DEFINATION)
 	public ResponseEntity<ApiResponseDto> getFormDefination() {
 		return adminConfigFormFieldService.getFormDefination();
-	}
-
-	@PostMapping(FORM)
-	public ResponseEntity<ApiResponseDto> createForm() {
-
-		return null;
 	}
 
 	@GetMapping()
@@ -89,6 +87,38 @@ public class AdminConfigFormFieldController {
 			HttpServletRequest request) {
 
 		return adminConfigFormFieldService.deleteFormSection(request, formSectionId);
+	}
+	
+	@PostMapping(FORM)
+	public ResponseEntity<ApiResponseDto> createFormFields(@RequestBody CreateFormDto createFormDto
+			,HttpServletRequest request) {
+
+		return adminConfigFormFieldService.createFormFields(createFormDto, request);
+	}
+
+	/**
+	 * PUT /api/v1/employee/admin-config/form-fields/form
+	 * Updates FormFieldMaster records (by fieldId) + creates a new FormVersion entry.
+	 * formMasterId and formSectionId come from the request body (mirrors createForm).
+	 */
+	@PutMapping(UPDATE_FORM)
+	public ResponseEntity<ApiResponseDto> updateFormFields(
+			@Valid @RequestBody UpdateFormRequestDto requestDto,
+			HttpServletRequest request) {
+
+		return adminConfigFormFieldService.updateFormFields(requestDto, request);
+	}
+
+	/**
+	 * DELETE /api/v1/employee/admin-config/form-fields/form/{formId}
+	 * Soft-deletes the form AND all its FormVersions in one transaction.
+	 */
+	@DeleteMapping(DELETE_FORM)
+	public ResponseEntity<ApiResponseDto> deleteFormFields(
+			@PathVariable UUID formId,
+			HttpServletRequest request) {
+
+		return adminConfigFormFieldService.deleteFormFields(formId, request);
 	}
 
 }
